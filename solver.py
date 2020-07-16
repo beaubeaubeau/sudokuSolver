@@ -18,24 +18,38 @@ function backtrack(assignment, constraintProblem):
 
 """
 Board to solve. 0 denotes a blank or unknown value.
-Starting with a simple Sudoku board as a warm up.
 """
-board = [[1,0,3,0],
-        [0,0,1,4],
-        [4,1,0,0],
-        [0,3,0,0]]
+board = [
+    [7,8,0,4,0,0,1,2,0],
+    [6,0,0,0,7,5,0,0,9],
+    [0,0,0,6,0,1,0,7,8],
+    [0,0,7,0,4,0,2,6,0],
+    [0,0,1,0,5,0,9,3,0],
+    [9,0,4,0,6,0,0,0,5],
+    [0,7,0,3,0,0,0,1,2],
+    [1,2,0,0,0,7,4,0,0],
+    [0,4,9,2,0,6,0,0,7]
+]
+
 
 def resetBoard(board: list):
     """
     Resets the board to its original values.
 
     @param board:list
-        List of lists representing the Sudoku board of size 4x4.
+        List of lists representing the Sudoku board of size 9x9.
     """
-    board = [[1,0,3,0],
-            [0,0,1,4],
-            [4,1,0,0],
-            [0,3,0,0]]
+    board = [
+        [7,8,0,4,0,0,1,2,0],
+        [6,0,0,0,7,5,0,0,9],
+        [0,0,0,6,0,1,0,7,8],
+        [0,0,7,0,4,0,2,6,0],
+        [0,0,1,0,5,0,9,3,0],
+        [9,0,4,0,6,0,0,0,5],
+        [0,7,0,3,0,0,0,1,2],
+        [1,2,0,0,0,7,4,0,0],
+        [0,4,9,2,0,6,0,0,7]
+    ]
 
 
 def printBoard(board: list):
@@ -43,7 +57,7 @@ def printBoard(board: list):
     Prints the Sudoku board in a user friendly way in the output box.
 
     @param board:list
-        List of lists representing the Sudoku board of size 4x4.
+        List of lists representing the Sudoku board of size 9x9.
     """
     for i in range(len(board)):
         row = board[i]
@@ -53,14 +67,14 @@ def printBoard(board: list):
             item = row[j]
             disp = disp+str(item)
             # for the smaller sub boxes
-            if(j == 1):
+            if(j%3 == 2 and j!=8):
                 disp = disp + "|"
             else:
                 disp = disp + " "
         print(disp)
         # Adds row of dividing lines to separate the smaller boxes
-        if(i == 1):
-            print("- - - - ")
+        if(i%3 == 2 and i!=8):
+            print("- - - - - - - - -")
 
 
 
@@ -69,7 +83,7 @@ def findEmptySpace(board:list)->(int,int):
     Finds the (row, column) position of an empty space on the board (a value of 0).
 
     @param board: list
-        List of lists representing the Sudoku board of size 4x4.
+        List of lists representing the Sudoku board of size 9x9.
 
     @return
         A (row,column) position of an empty space.
@@ -81,7 +95,7 @@ def findEmptySpace(board:list)->(int,int):
                 return (row,col)
     return (-1,-1)
 
-def isValid(board: list, row: int, col: int) -> bool:
+def isValid(board: list, row: int, col: int, val: int) -> bool:
     """
     Checks to see if the value at the specified row and column of
     the sudoku board is valid.
@@ -94,43 +108,42 @@ def isValid(board: list, row: int, col: int) -> bool:
         Integer value representing the row number (0 indexed).
     @param col: int
         Integer value representing the column number (0 indexed).
+    @param val: int
+        Integer value of the Sudoku box
 
     @return
         True if value at specified position in board is valid.
         False otherwise.
     """
     assert len(board)==len(board[0])
-    assert len(board)==4
+    assert len(board)==9
 
-    currVal = board[row][col]
     # First check the row. Make sure new assigned value does not already exist.
     for i in range(len(board)):
-        if(i!=col and board[row][i] == currVal):
+        if(i!=col and board[row][i] == val):
             #print("FAILED ROW")# for debugging
             return False
 
     # Check the column, ensuring newly assigned value doesn't already exist.
     for i in range(len(board)):
-        if(i!= row and board[i][col]==currVal):
+        if(i!= row and board[i][col]==val):
             #print("FAILED COL")# for debugging
             return False
 
     # Check the small box, ensuring newly assigned value doesn't already exist.
     # Determining the boundaries of the smaller box.
-    startRow = 0
-    startCol = 0
+    startRow = row//3
+    startCol = col//3
 
-    if row > 1:
-        startRow = 2
-    if col > 1:
-        startCol = 2
+    startRow = startRow * 3
+    startCol = startCol * 3
 
-    stopRow = startRow + 2
-    stopCol = startCol + 2
+    stopRow = startRow + 3
+    stopCol = startCol + 3
 
     for i in range(startRow, stopRow):
         for j in range(startCol,stopCol):
-            if(i!=row and j!=col and board[i][j]==currVal):
+            if(i!=row and j!=col and board[i][j]==val):
                 #print("FAILED BOX") # for debugging
                 return False
     return True
@@ -140,7 +153,7 @@ def solve(board:list)->True:
     Solves the Sudoku board.
 
     @param board: list
-        List of lists representing the Sudoku board of size 4x4.
+        List of lists representing the Sudoku board of size 9x9.
 
     @return
         True is board is solved.
@@ -151,18 +164,17 @@ def solve(board:list)->True:
     # No empty spaces found
     if row==-1 or col==-1:
         return True
-    # Try values 1 through 4 on this open space
-    for val in range(1,5):
-        board[row][col] = val
+    # Try values 1 through 9 on this open space
+    for val in range(1,10):
         # If the guess is valid, recurse
-        if(isValid(board,row,col)):
+        if(isValid(board,row,col,val)):
+            board[row][col] = val
             solved = solve(board)
             # If the entire board is solved, then algorithm terminates
             if(solved):
                 return True
         # Guess is not valid, reset square to 0
-        else:
-            board[row][col] = 0
+        board[row][col] = 0
     # Exhausted all values and none of them worked
     return False
 
